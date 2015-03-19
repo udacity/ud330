@@ -346,14 +346,11 @@ def deleteRestaurant(restaurant_id):
 @app.route('/restaurant/<int:restaurant_id>/menu/')
 def showMenu(restaurant_id):
     restaurant = session.query(Restaurant).filter_by(id = restaurant_id).one()
-<<<<<<< Updated upstream:FinalProject/project.py
-    creator = getUserInfo(restaurant.user_id)
-=======
-    print "restaurant id is %s" %restaurant.id
-    print "User id is %s " % restaurant.user_id
+
+
     creator = getUserInfo(restaurant.user_id)
 
->>>>>>> Stashed changes:FinalProject/finalproject.py
+
     items = session.query(MenuItem).filter_by(restaurant_id = restaurant_id).all()
     if 'username' not in login_session or creator.id != login_session['user_id']:
       return render_template('publicmenu.html', items = items, restaurant = restaurant, creator= creator)

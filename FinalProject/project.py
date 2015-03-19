@@ -8,6 +8,7 @@ from database_setup import Base, Restaurant, MenuItem, User
 from flask import session as login_session
 import random, string 
 
+
 #IMPORTS FOR THIS STEP
 #from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import flow_from_clientsecrets
@@ -18,16 +19,25 @@ from flask import make_response
 import requests
 
 
+
+
 CLIENT_ID = json.loads(
     open('client_secrets.json', 'r').read())['web']['client_id']
 APPLICATION_NAME = "Restaurant Menu Application"
 
-engine = create_engine('sqlite:///restaurantmenuwithusers.db')
+engine = create_engine('postgres://swyopjstoplhpj:mldH715JMJHFKdZaIpfJuesXiA@ec2-184-73-221-47.compute-1.amazonaws.com:5432/dblg34ae505inc')
 Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
+
+#Log to strderr
+import logging
+from logging import StreamHandler
+file_handler = StreamHandler()
+app.logger.setLevel(logging.DEBUG)  # set the desired logging level here
+app.logger.addHandler(file_handler)
 
 
 # Create a state token to prevent request forgery.
@@ -36,6 +46,7 @@ session = DBSession()
 def showLogin():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
     login_session['state'] = state
+    #return state
     return render_template('login.html', STATE=state)
 
 @app.route('/gconnect', methods=['POST'])
@@ -51,6 +62,7 @@ def gconnect():
   #gplus_id = request.args.get('gplus_id')
   #print "request.args.get('gplus_id') = %s" %request.args.get('gplus_id')
   code = request.data
+  print "received code of %s " % code
 
   try:
     # Upgrade the authorization code into a credentials object
@@ -61,7 +73,7 @@ def gconnect():
     response = make_response(json.dumps('Failed to upgrade the authorization code.'), 401)
     response.headers['Content-Type'] = 'application/json'
     return response
-
+  
   # Check that the access token is valid.
   access_token = credentials.access_token
   url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
@@ -105,7 +117,7 @@ def gconnect():
   login_session['gplus_id'] = gplus_id
   response = make_response(json.dumps('Successfully connected user.', 200))
   
-  #Get user info
+  print "#Get user info"
   userinfo_url =  "https://www.googleapis.com/oauth2/v1/userinfo"
   params = {'access_token': credentials.access_token, 'alt':'json'}
   answer = requests.get(userinfo_url, params=params)
@@ -433,7 +445,7 @@ def createUser(login_session):
     user = session.query(User).filter_by(email = login_session['email']).one()
     return user.id
 
-if __name__ == '__main__':
-    app.secret_key = 'super_secret_key'
-    app.debug = True
-    app.run(host = '0.0.0.0', port = 5000)
+#if __name__ == '__main__':
+app.secret_key = 'super_secret_key'
+app.debug = True
+#app.run(host = '0.0.0.0', port = 5000)

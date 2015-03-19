@@ -1,9 +1,9 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
  
-from database_setup import Restaurant, Base, MenuItem
+from database_setup import Restaurant, Base, MenuItem, User
  
-engine = create_engine('sqlite:///restaurantmenuwithusers.db')
+engine = create_engine('postgres://swyopjstoplhpj:mldH715JMJHFKdZaIpfJuesXiA@ec2-184-73-221-47.compute-1.amazonaws.com:5432/dblg34ae505inc')
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 Base.metadata.bind = engine
@@ -19,6 +19,10 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 
+#Create dummy user
+User1 = User(name="Tinny Tim", email="tinnyTim@udacity.com", picture='https://pbs.twimg.com/profile_images/2671170543/18debd694829ed78203a5a36dd364160_400x400.png')
+session.add(User1)
+session.commit()
 
 #Menu for UrbanBurger
 restaurant1 = Restaurant(user_id=1, name = "Urban Burger")
@@ -132,7 +136,7 @@ menuItem2 = MenuItem(user_id=1, name = "Chinese Dumplings", description = "a com
 session.add(menuItem2)
 session.commit()
 
-menuItem3 = MenuItem(user_id=1, name = "Gyoza", description = "The most prominent differences between Japanese-style gyoza and Chinese-style jiaozi are the rich garlic flavor, which is less noticeable in the Chinese version, the light seasoning of Japanese gyoza with salt and soy sauce, and the fact that gyoza wrappers are much thinner", price = "$9.95", course = "Entree", restaurant = restaurant1)
+menuItem3 = MenuItem(user_id=1, name = "Gyoza", description = "light seasoning of Japanese gyoza with salt and soy sauce, and in a thin gyoza wrapper", price = "$9.95", course = "Entree", restaurant = restaurant1)
 
 session.add(menuItem3)
 session.commit()
