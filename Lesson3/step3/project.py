@@ -15,7 +15,6 @@ import httplib2
 import json
 from flask import make_response
 import requests
-import cgi, cgitb
 
 CLIENT_ID = json.loads(
   open('client_secrets.json', 'r').read())['web']['client_id']
@@ -46,31 +45,16 @@ def gconnect():
     response = make_response(json.dumps('Invalid state parameter.'), 401)
     response.headers['Content-Type'] = 'application/json'
     return response
-  #Obtain authorization code
-  print("request json")
-  print(request.json)
+  #Obtain authorization code, now compatible with Python3
   request.get_data()
-  print("request.data, action & code:")
-  print(request.data)
-  print(type(request.data))
-  print(dir(request.data))
-  # print(request.data['code'])
-  # print(request.data['action'])
-  # code = request.data
   code = request.data.decode('utf-8')
-  print("code: " + code)
-  print(type(code))
 
   try:
     # Upgrade the authorization code into a credentials object
     oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
     oauth_flow.redirect_uri = 'postmessage'
-    print("just before step2_exchange")
-    # auth_uri = oauth_flow.step1_get_authorize_url()
-    # Redirect the user to auth_uri on your platform.
     credentials = oauth_flow.step2_exchange(code)
   except FlowExchangeError:
-    print ("FlowExchangeError")
     response = make_response(json.dumps('Failed to upgrade the authorization code.'), 401)
     response.headers['Content-Type'] = 'application/json'
     return response
@@ -79,24 +63,20 @@ def gconnect():
   access_token = credentials.access_token
   url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
          % access_token)
-  print("url")
-  print(url)
+  # Submit request, parse response - Python3 compatible 
   h = httplib2.Http()
   response = h.request(url, 'GET')[1]
   str_response = response.decode('utf-8')
   result = json.loads(str_response)
+
   # If there was an error in the access token info, abort.
   if result.get('error') is not None:
     response = make_response(json.dumps(result.get('error')), 500)
     response.headers['Content-Type'] = 'application/json'
 
-    
   # Verify that the access token is used for the intended user.
   gplus_id = credentials.id_token['sub']
-  print ("gplus_id")
-  print (gplus_id)
   if result['user_id'] != gplus_id:
-    print("result['user_id'] != gplus_id")
     response = make_response(
         json.dumps("Token's user ID doesn't match given user ID."), 401)
     response.headers['Content-Type'] = 'application/json'
@@ -106,7 +86,6 @@ def gconnect():
   if result['issued_to'] != CLIENT_ID:
     response = make_response(
         json.dumps("Token's client ID does not match app's."), 401)
-    print("Token's client ID does not match app's.")
     response.headers['Content-Type'] = 'application/json'
     return response
 
@@ -149,7 +128,6 @@ def gconnect():
   output += login_session['picture']
   output +=' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
   flash("you are now logged in as %s"%login_session['username'])
-  print("done!")
   return output
 
 #User Helper Functions
@@ -180,15 +158,9 @@ def gdisconnect():
     response = make_response(json.dumps('Current user not connected.'),401)
     response.headers['Content-Type'] = 'application/json'
     return response 
-  print("access token")
-  print(access_token)
   url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
-  print("url")
-  print(url)
   h = httplib2.Http()
   result = h.request(url, 'GET')[0]
-  print ("result")
-  print(result)
   if result['status'] == '200':
     #Reset the user's sesson.
     del login_session['access_token']
