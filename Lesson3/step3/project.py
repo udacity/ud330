@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, jsonify, url_for, flash
+from flask import Flask, render_template, request, redirect,jsonify, url_for, flash
+app = Flask(__name__)
 
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
@@ -14,7 +15,7 @@ import httplib2
 import json
 from flask import make_response
 import requests
-app = Flask(__name__)
+import cgi, cgitb
 
 CLIENT_ID = json.loads(
   open('client_secrets.json', 'r').read())['web']['client_id']
@@ -46,16 +47,30 @@ def gconnect():
     response.headers['Content-Type'] = 'application/json'
     return response
   #Obtain authorization code
-  code = request.data
+  print("request json")
+  print(request.json)
+  request.get_data()
+  print("request.data, action & code:")
+  print(request.data)
+  print(type(request.data))
+  print(dir(request.data))
+  # print(request.data['code'])
+  # print(request.data['action'])
+  # code = request.data
+  code = request.data.decode('utf-8')
+  print("code: " + code)
+  print(type(code))
 
   try:
     # Upgrade the authorization code into a credentials object
     oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
     oauth_flow.redirect_uri = 'postmessage'
-    print(str(code))
-    credentials = oauth_flow.step2_exchange(json.loads(str(code))
-    print(credentials)
+    print("just before step2_exchange")
+    # auth_uri = oauth_flow.step1_get_authorize_url()
+    # Redirect the user to auth_uri on your platform.
+    credentials = oauth_flow.step2_exchange(code)
   except FlowExchangeError:
+    print ("FlowExchangeError")
     response = make_response(json.dumps('Failed to upgrade the authorization code.'), 401)
     response.headers['Content-Type'] = 'application/json'
     return response
@@ -64,8 +79,12 @@ def gconnect():
   access_token = credentials.access_token
   url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
          % access_token)
+  print("url")
+  print(url)
   h = httplib2.Http()
-  result = json.loads(h.request(url, 'GET')[1])
+  response = h.request(url, 'GET')[1]
+  str_response = response.decode('utf-8')
+  result = json.loads(str_response)
   # If there was an error in the access token info, abort.
   if result.get('error') is not None:
     response = make_response(json.dumps(result.get('error')), 500)
@@ -74,7 +93,10 @@ def gconnect():
     
   # Verify that the access token is used for the intended user.
   gplus_id = credentials.id_token['sub']
+  print ("gplus_id")
+  print (gplus_id)
   if result['user_id'] != gplus_id:
+    print("result['user_id'] != gplus_id")
     response = make_response(
         json.dumps("Token's user ID doesn't match given user ID."), 401)
     response.headers['Content-Type'] = 'application/json'
@@ -88,22 +110,22 @@ def gconnect():
     response.headers['Content-Type'] = 'application/json'
     return response
 
-  stored_credentials = login_session.get('credentials')
+  stored_access_token = login_session.get('access_token')
   stored_gplus_id = login_session.get('gplus_id')
-  if stored_credentials is not None and gplus_id == stored_gplus_id:
+  if stored_access_token is not None and gplus_id == stored_gplus_id:
     response = make_response(json.dumps('Current user is already connected.'),
                              200)
     response.headers['Content-Type'] = 'application/json'
     return response
     
   # Store the access token in the session for later use.
-  login_session['credentials'] = credentials
+  login_session['access_token'] = access_token
   login_session['gplus_id'] = gplus_id
  
   
   #Get user info
   userinfo_url =  "https://www.googleapis.com/oauth2/v1/userinfo"
-  params = {'access_token': credentials.access_token, 'alt':'json'}
+  params = {'access_token': access_token, 'alt':'json'}
   answer = requests.get(userinfo_url, params=params)
   
   data = answer.json()
@@ -153,19 +175,23 @@ def getUserID(email):
 @app.route('/gdisconnect')
 def gdisconnect():
     #Only disconnect a connected user.
-  credentials = login_session.get('credentials')
-  if credentials is None:
+  access_token = login_session.get('access_token')
+  if access_token is None:
     response = make_response(json.dumps('Current user not connected.'),401)
     response.headers['Content-Type'] = 'application/json'
     return response 
-  access_token = credentials.access_token
+  print("access token")
+  print(access_token)
   url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
+  print("url")
+  print(url)
   h = httplib2.Http()
   result = h.request(url, 'GET')[0]
-
+  print ("result")
+  print(result)
   if result['status'] == '200':
     #Reset the user's sesson.
-    del login_session['credentials']
+    del login_session['access_token']
     del login_session['gplus_id']
     del login_session['username']
     del login_session['email']
