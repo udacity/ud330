@@ -1,12 +1,14 @@
 # flask_tracking/users/tests.py
 from flask import url_for
 from flask import session as login_session
+from flask.ext.testing import TestCase
+from flask import Flask
+import flask.ext.testing
 
-from sqlalchemy import create_engine, asc
-from sqlalchemy.orm import scoped_session, sessionmaker
+from flask.ext.sqlalchemy import SQLAlchemy
 
 from finalproject import app
-from finalproject import init_db2
+from finalproject import init
 from finalproject import newMenuItem
 from finalproject import set_db_session, set_login_session_user_id
 # from finalproject import session
@@ -32,91 +34,119 @@ APPLICATION_NAME = "Restaurant Menu Application"
 # session = DBSession()
 
 
-class TestCase(unittest.TestCase):
-    def setUp(self):
-        app.config['TESTING'] = True
-        self.session, self.scoped_session = init_db2('sqlite:///tests.db')
-        # app.config['WTF_CSRF_ENABLED'] = False
-        # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'test.db')
-        self.app = app.test_client()
-        app.secret_key = 'super_secret_key'
+class ModelsTestCase(TestCase):
+    SQLALCHEMY_DATABASE_URI = "sqlite://tests.db"
+    TESTING = True
+    def create_app(self):
+        app = Flask(__name__)
+        app.config['SECRET_KEY'] = 'super_secret_key'
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tests.db'
+        app.config['SESSION_TYPE'] = 'filesystem'
+        self.db = SQLAlchemy(app)
         app.debug = True
-        set_db_session(self.session)
-        with self.app.session_transaction() as sess:
+        with app.test_client().session_transaction() as sess:
             sess['user_id'] = 1
-            print("session: {}".format(sess.__dict__))
+        with app.test_request_context():
+            set_login_session_user_id(1)
+        return app
 
-        # db.create_all()
+    def setUp(self):
+        self.db.create_all()
+        self.client = self.app.test_client()
+        set_db_session(self.db.session)
 
     def tearDown(self):
-        self.session.close()
-        self.scoped_session.remove()
-        # Base.metadata.drop_all()
-
+        self.db.session.remove()
+        self.db.drop_all()
 
     def test_make_unique_nickname(self):
         u = User(name='john', email='john@example.com', picture="")
-        self.session.add(u)
-        self.session.commit()
-        nickname = User.make_unique_nickname('john', self.session)
+        self.db.session.add(u)
+        self.db.session.commit()
+        nickname = User.make_unique_nickname('john', self.db.session)
         assert nickname != 'john'
         u = User(name=nickname, email='susan@example.com', picture="")
-        self.session.add(u)
-        self.session.commit()
-        nickname2 = User.make_unique_nickname('john', self.session)
+        self.db.session.add(u)
+        self.db.session.commit()
+        nickname2 = User.make_unique_nickname('john', self.db.session)
         assert nickname2 != 'john'
         assert nickname2 != nickname
 
-    def test_add_menuitem(self):
-        u = User(name='john', email='john@example.com', picture="")
-        self.session.add(u)
-        self.session.commit()
-        # newMenuItem(r.id)
-        response = self.app.post('/restaurant/1/menu/new/', data=dict(name = 'yummy dog2', description= 'you must try this', price= 1, course = 'dessert'))
-        print("response: {}".format(response.__dict__))
-        print("response[status]: {}".format(response.status_code))
-        print("menu item count: {}".format(self.session.query(MenuItem).count()))
-        lastItem = self.session.query(MenuItem).order_by(MenuItem.id.desc()).first()
-        print("menu item last: {}".format(lastItem.__dict__))
-        assert lastItem.name == 'yummy dog2'
-
-    def test_add_restaurant(self):
-        u = User(name='john', email='john@example.com', picture="")
-        self.session.add(u)
-        self.session.commit()
-        # newMenuItem(r.id)
-        response = self.app.post('/restaurant/new/', data={'name': 'soups r us'})
-        print("response: {}".format(response.__dict__))
-        print("response[status]: {}".format(response.status_code))
-        assert self.session.query(Restaurant).all() != None
-
-class UserViewsTests(unittest.TestCase):
-    def setUp(self):
-        app.config['TESTING'] = True
-        self.session, self.scoped_session = init_db2('sqlite:///tests.db')
-        # app.config['WTF_CSRF_ENABLED'] = False
-        # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'test.db')
-        self.app = app.test_client()
-        app.secret_key = 'super_secret_key'
+class UserViewsTests(TestCase):
+    SQLALCHEMY_DATABASE_URI = "sqlite://tests.db"
+    TESTING = True
+    def create_app(self):
+        app = Flask(__name__)
+        app.config['SECRET_KEY'] = 'super_secret_key'
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tests.db'
+        app.config['SESSION_TYPE'] = 'filesystem'
+        self.db = SQLAlchemy(app)
         app.debug = True
-        set_db_session(self.session)
-        # db.create_all()
+        with app.test_client().session_transaction() as sess:
+            sess['user_id'] = 1
+        with app.test_request_context():
+            set_login_session_user_id(1)
+            print("In create_app, login_session: {}".format(login_session))
+        return app
+
+    def setUp(self):
+        self.db.create_all()
+        set_db_session(self.db.session)
+        # self.client = self.app.test_client()
 
     def tearDown(self):
-        self.session.close()
-        self.scoped_session.remove()
-        # Base.metadata.drop_all()
+        self.db.session.remove()
+        self.db.drop_all()
 
 
     def test_users_can_login(self):
         u = User(name='joe', email='joe@example.com', picture="12345")
-        self.session.add(u)
-        self.session.commit()
+        self.db.session.add(u)
+        self.db.session.commit()
 
         # response = self.app.post(url_for('auth.login'), data={'email': 'joe@joes.com', 'picture': '12345'})
-        response = self.app.get('/')
+        response = app.test_client(self).get('/')
+        print("response /: {}".format(response.__dict__))
         assert response.status_code == 200
         # data = json.loads(response.data)
         # print("data: {}".format(data))
-        response = self.app.get('/login')
+        response = app.test_client(self).get('/login')
+        print("response /login: {}".format(response.__dict__))
         assert response.status_code == 200
+
+    def test_add_menuitem(self):
+        u = User(name='john', email='john@example.com', picture="")
+        self.db.session.add(u)
+        self.db.session.commit()
+        # newMenuItem(r.id)
+        with app.test_client() as c:
+            with c.session_transaction() as sess:
+                sess['user_id'] = 1
+            response = c.post('/restaurant/1/menu/new/', data=dict(name = 'yummy dog', description= 'you must try this', price= 1, course = 'dessert'), follow_redirects=True)
+        print("response: {}".format(response.__dict__))
+        print("response[status]: {}".format(response.status_code))
+        print("menu item count: {}".format(self.db.session.query(MenuItem).count()))
+        lastItem = self.db.session.query(MenuItem).order_by(MenuItem.id.desc()).first()
+        print("menu item last: {}".format(lastItem.__dict__))
+        assert lastItem.name == 'yummy dog'
+
+    def test_add_restaurant(self):
+        u = User(name='john', email='john@example.com', picture="")
+        self.db.session.add(u)
+        self.db.session.commit()
+        # newMenuItem(r.id)
+        # app.session_transaction()['user_id'] = 1
+        with app.test_client() as c:
+            with c.session_transaction() as sess:
+                sess['user_id'] = 1
+            # print ("In test_add_restaurant: {}".format(app.login_session))
+            # app.login_session['user_id'] = 1
+            print ("In test_add_restaurant: {}".format(login_session))
+            response = c.post('/restaurant/new/', data={'name': 'soups r us'}, follow_redirects=True)
+        print("response: {}".format(response.__dict__))
+        print("response[status]: {}".format(response.status_code))
+        assert self.db.session.query(Restaurant).all() != None
+
+if __name__ == '__main__':
+    unittest.main()
+

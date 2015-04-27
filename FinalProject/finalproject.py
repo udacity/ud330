@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect,jsonify, url_for, flash, g
 app = Flask(__name__)
 
+from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import scoped_session, sessionmaker
 from database_setup import Base, Restaurant, MenuItem, User
@@ -23,24 +24,25 @@ def set_db_session(session):
   app.db_session = session
 
 def set_login_session_user_id(userid):
-  flask.session['user_id'] = userid
+  app.secret_key = 'super_secret_key'
+  login_session['user_id'] = userid
+  print ("In set_login_session_user_id: {}".format(login_session))
 
 
-def init_db2(db_filename):
+def init(db_filename):
   """Initializes the database."""
-  engine = create_engine(db_filename)
-  Base.metadata.bind = engine
-  DBSession = sessionmaker(bind=engine)
-  session = DBSession()
-  app.db_session = session
-  scopedSession = scoped_session(sessionmaker(engine))
-  return session, scopedSession
+  app = Flask(__name__)
+  app.config['SQLALCHEMY_DATABASE_URI'] = db_filename
+  app.config['SESSION_TYPE'] = 'filesystem'
+  db = SQLAlchemy(app)
+  return db
 
 
 # Create a state token to prevent request forgery.
 # Store it in the session for later validation.
 @app.route('/login')
 def showLogin():
+    print ("In login")
     state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(32))
     login_session['state'] = state
     return render_template('login.html', STATE=state)
@@ -294,6 +296,7 @@ def disconnect():
 @app.route('/')
 @app.route('/restaurant/')
 def showRestaurants():
+  print("In restaurant")
   restaurants = app.db_session.query(Restaurant).order_by(asc(Restaurant.name))
   print("Restaurants count: {}".format(restaurants.count()))
   print("first Restaurants : {}".format(restaurants.first()))
@@ -305,6 +308,7 @@ def showRestaurants():
 #Create a new restaurant
 @app.route('/restaurant/new/', methods=['GET','POST'])
 def newRestaurant():
+  print("In newRestaurant, login_session: {}".format(login_session))
   if 'user_id' not in login_session:
     return redirect('/login')
   if request.method == 'POST':
@@ -374,6 +378,7 @@ def showMenu(restaurant_id):
 #Create a new menu item
 @app.route('/restaurant/<int:restaurant_id>/menu/new/',methods=['GET','POST'])
 def newMenuItem(restaurant_id):
+  print("In newMenuItem, login_session: {}".format(login_session))
   if 'user_id' not in login_session:
     return redirect('/login')
   print("NewMenuItem:: UserID is good")
@@ -467,5 +472,5 @@ if __name__ == '__main__':
   CLIENT_ID = json.loads(
     open('client_secrets.json', 'r').read())['web']['client_id']
   APPLICATION_NAME = "Restaurant Menu Application"
-  app.db_session, scoped_session = init_db2('sqlite:///restaurantmenuwithusers.db')
+  app.db_session = init('sqlite:///restaurantmenuwithusers.db').session
   app.run(host = '0.0.0.0', port = 5000)
