@@ -104,7 +104,7 @@ def gconnect():
     return response
 
   
-  stored_credentials = login_session.get('credentials')
+  stored_credentials = login_session.get('credentials_access_token')
   stored_gplus_id = login_session.get('gplus_id')
   if stored_credentials is not None and gplus_id == stored_gplus_id:
     response = make_response(json.dumps('Current user is already connected.'),
@@ -113,7 +113,7 @@ def gconnect():
     
   # Store the access token in the session for later use.
   login_session['provider'] = 'google'
-  login_session['credentials'] = credentials
+  login_session['credentials_access_token'] = access_token
   login_session['gplus_id'] = gplus_id
   response = make_response(json.dumps('Successfully connected user.', 200))
   

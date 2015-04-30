@@ -4,6 +4,7 @@ from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
  
 Base = declarative_base()
 
@@ -15,6 +16,36 @@ class User(Base):
     name = Column(String(250), nullable=False)
     email = Column(String(250), nullable=False)
     picture = Column(String(250))
+
+    @staticmethod
+    def make_unique_nickname(nickname, session):
+        if session.query(User).filter_by(name=nickname).first() is None:
+            return nickname
+        version = 2
+        while True:
+            new_nickname = nickname + str(version)
+            if session.query(User).filter_by(name=new_nickname).first() is None:
+                break
+            version += 1
+        return new_nickname
+
+    @staticmethod
+    def create(login_session, session):
+        newUser = User(name = login_session['username'], email = login_session['email'], picture = login_session['picture'])
+        session.add(newUser)
+        session.commit()
+        user = session.query(User).filter_by(email = login_session['email']).first()
+        return user.id
+
+    @staticmethod
+    def find_id_by_email(email, session):
+        try:
+            user = session.query(User).filter_by(email = email).first()
+            return user.id
+        except:
+            return None
+
+
 
 
 class Restaurant(Base):
@@ -60,8 +91,3 @@ class MenuItem(Base):
        }
 
 
-
-engine = create_engine('sqlite:///restaurantmenu.db')
- 
-
-Base.metadata.create_all(engine)
