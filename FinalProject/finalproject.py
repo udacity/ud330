@@ -4,7 +4,7 @@ app = Flask(__name__)
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import scoped_session, sessionmaker
-from database_setup import Base, Restaurant, MenuItem, User
+from werkzeug import secure_filename
 
 from flask import session as login_session
 import random, string 
@@ -17,8 +17,20 @@ import httplib2
 import json 
 from flask import make_response
 import requests
+import os
+from database_setup import Base, Restaurant, MenuItem, User
 
 
+ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+
+UPLOADS_FOLDER = "/static/images"
+UPLOADS_DEFAULT_DEST = "static/images"
+
+app.config['UPLOAD_FOLDER'] = UPLOADS_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 def set_db_session(session):
   app.db_session = session
@@ -35,6 +47,7 @@ def init(db_filename):
   app.config['SQLALCHEMY_DATABASE_URI'] = db_filename
   app.config['SESSION_TYPE'] = 'filesystem'
   db = SQLAlchemy(app)
+  db.create_all()
   return db
 
 
@@ -364,8 +377,8 @@ def showMenu(restaurant_id):
 
     creator = getUserInfo(restaurant.user_id, app.db_session)
     print("creator: {} {}".format(creator.name, creator.id))
-    print("login_session id: {}".format(login_session['user_id']))
-    print("login_session name: {}".format(login_session['username']))
+    print("login_session id: {}".format(login_session.get('user_id')))
+    print("login_session name: {}".format(login_session.get('username')))
 
     items = app.db_session.query(MenuItem).filter_by(restaurant_id = restaurant_id).all()
     if 'username' not in login_session or creator.id != login_session['user_id']:
@@ -388,17 +401,21 @@ def newMenuItem(restaurant_id):
   print("NewMenuItem:: Authorized to add menu items")
   print("request method: {}".format(request.method))
   if request.method == 'POST':
-      print("New Menu Item {} about to be created for restaurant {}".format(request.form.__dict__, restaurant_id))
-      print("New Menu Item {} about to be created for restaurant {}".format(request.form['name'], restaurant_id))
-      newItem = MenuItem(name = request.form['name'], description = request.form['description'], price = request.form['price'], course = request.form['course'], restaurant_id = restaurant_id, user_id=restaurant.user_id)
-      print("New Menu Item %s about to be added" % (newItem.name))
-      app.db_session.add(newItem)
-      app.db_session.commit()
-      print("New Menu Item %s Successfully Created" % (newItem.name))
-      flash('New Menu %s Item Successfully Created' % (newItem.name))
-      return redirect(url_for('showMenu', restaurant_id = restaurant_id))
+      request.get_data()
+      files = request.files
+      file = request.files['fileToUpload']
+      if file and allowed_file(file.filename):
+          filename = secure_filename(file.filename)
+          file.save(os.path.join(UPLOADS_DEFAULT_DEST, filename))
+          newItem = MenuItem(name = request.form['name'], description = request.form['description'], price = request.form['price'], course = request.form['course'], restaurant = restaurant, user_id=restaurant.user_id, imagefile = filename)
+          app.db_session.add(newItem)
+          app.db_session.commit()
+          flash('New Menu %s Item Successfully Created' % (newItem.name))
+          print("menuitem url: {0}".format(url_for('showMenu', restaurant_id=restaurant.id)))
+          return redirect(url_for('showMenu', restaurant_id=restaurant.id))
   else:
       return render_template('newmenuitem.html', restaurant_id = restaurant_id)
+
 
 #Edit a menu item
 @app.route('/restaurant/<int:restaurant_id>/menu/<int:menu_id>/edit', methods=['GET','POST'])

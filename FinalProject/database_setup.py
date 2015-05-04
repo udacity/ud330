@@ -5,11 +5,18 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from flask import Flask
+from flask.ext.sqlalchemy import SQLAlchemy
+# from finalproject import UPLOADS_FOLDER
+UPLOAD_FOLDER = "/static/images"
  
 Base = declarative_base()
 
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///restaurantmenuwithusers.db'
+db = SQLAlchemy(app)
 
-class User(Base):
+class User(db.Model):
     __tablename__ = 'user'
    
     id = Column(Integer, primary_key=True)
@@ -45,10 +52,17 @@ class User(Base):
         except:
             return None
 
+    def __init__(self, name, email, picture):
+        self.name = name
+        self.email = email
+        self.picture = picture
+
+    def __repr__(self):
+        return '<User %r>' % self.name
 
 
 
-class Restaurant(Base):
+class Restaurant(db.Model):
     __tablename__ = 'restaurant'
    
     id = Column(Integer, primary_key=True)
@@ -65,7 +79,14 @@ class Restaurant(Base):
            'user_id'   : self.user_id
        }
  
-class MenuItem(Base):
+    def __init__(self, name, user_id):
+        self.name = name
+        self.user_id = user_id
+
+    def __repr__(self):
+        return '<Restaurant %r>' % self.name
+
+class MenuItem(db.Model):
     __tablename__ = 'menu_item'
 
 
@@ -76,6 +97,7 @@ class MenuItem(Base):
     course = Column(String(250))
     restaurant_id = Column(Integer,ForeignKey('restaurant.id'))
     restaurant = relationship(Restaurant)
+    imagefile = Column(String(250))
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship(User)
 
@@ -90,4 +112,35 @@ class MenuItem(Base):
            'course'         : self.course,
        }
 
+    def imageURL(self):
+      return UPLOAD_FOLDER + "/" + self.imagefile
+
+    def __init__(self, name, description, price, course, restaurant, imagefile, user_id):
+        self.name = name
+        self.description = description
+        self.price = price
+        self.course = course
+        self.restaurant = restaurant
+        self.imagefile = imagefile
+        self.user_id = user_id
+
+    # def __init__(self, name, description, price, course, restaurant_id, imagefile, user_id):
+    #     self.name = name
+    #     self.description = description
+    #     self.price = price
+    #     self.course = course
+    #     self.restaurant_id = restaurant_id
+    #     self.imagefile = imagefile
+    #     self.user_id = user_id
+
+    def __repr__(self):
+        return '<MenuItem %r>' % self.name
+        
+
+db.create_all()
+db.session.commit()
+User1 = User(name="Tinny Tim", email="tinnyTim@udacity.com", picture='https://pbs.twimg.com/profile_images/2671170543/18debd694829ed78203a5a36dd364160_400x400.png')
+db.session.add(User1)
+db.session.commit()
+print("created tables")
 

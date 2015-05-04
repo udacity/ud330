@@ -11,7 +11,7 @@
 	</div>
 	<div class="row">
 		<div class="col-md-6 col-md-offset-1 padding-top">
-			<form action="#" method = "post">
+			<form action="#" method = "post"  enctype="multipart/form-data">
 				<div class="form-group">
 					<label for="name">Name:</label>
 					<input type ="text" class="form-control" name="name"placeholder="Name of the course">
@@ -45,6 +45,8 @@
 					    <input type="radio" name="course" id="course4" value="Beverage">Beverage
 					  </label>
 					</div>
+				    Select image to upload:
+				    <input type="file" name="fileToUpload" id="fileToUpload">
 					<button type="submit" class="btn btn-default" id="submit" type="submit">
 					<span class="glyphicon glyphicon-glass" aria-hidden="true"></span>Create</button>
 				</div>
