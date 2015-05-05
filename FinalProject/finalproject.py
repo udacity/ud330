@@ -1,6 +1,9 @@
-from flask import Flask, render_template, request, redirect,jsonify, url_for, flash, g
+from flask import Flask, render_template, request, redirect,jsonify, url_for, flash, g, abort
 app = Flask(__name__)
 
+from flask_wtf.csrf import CsrfProtect
+from flask_wtf import Form
+from flask_wtf.file import FileField, FileAllowed, FileRequired
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -27,6 +30,7 @@ UPLOADS_FOLDER = "/static/images"
 UPLOADS_DEFAULT_DEST = "static/images"
 
 app.config['UPLOAD_FOLDER'] = UPLOADS_FOLDER
+csrf = CsrfProtect()
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -429,19 +433,28 @@ def editMenuItem(restaurant_id, menu_id):
     if login_session['user_id'] != restaurant.user_id:
       return "<script>function myFunction() {alert('You are not authorized to edit menu items to this restaurant. Please create your own restaurant in order to edit items.');}</script><body onload='myFunction()''>"
     if request.method == 'POST':
-        if request.form['name']:
-            editedItem.name = request.form['name']
-        if request.form['description']:
-            editedItem.description = request.form['name']
-        if request.form['price']:
-            editedItem.price = request.form['price']
-        if request.form['course']:
-            editedItem.course = request.form['course']
-        app.db_session.add(editedItem)
-        app.db_session.commit() 
-        flash('Menu Item Successfully Edited')
-        return redirect(url_for('showMenu', restaurant_id = restaurant_id))
+      request.get_data()
+      files = request.files
+      file = request.files['fileToUpload']
+      if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(UPLOADS_DEFAULT_DEST, filename))
+        editedItem.imagefile = filename
+        
+      if request.form['name']:
+          editedItem.name = request.form['name']
+      if request.form['description']:
+          editedItem.description = request.form['description']
+      if request.form['price']:
+          editedItem.price = request.form['price']
+      if request.form['course']:
+          editedItem.course = request.form['course']
+      app.db_session.add(editedItem)
+      app.db_session.commit() 
+      flash('Menu Item Successfully Edited')
+      return redirect(url_for('showMenu', restaurant_id = restaurant_id))
     else:
+        print("item: {}".format(editedItem.__dict__))
         return render_template('editmenuitem.html', restaurant_id = restaurant_id, menu_id = menu_id, item = editedItem)
 
 
@@ -483,11 +496,29 @@ def createUser(login_session, db_session):
     user = db_session.query(User).filter_by(email = login_session['email']).one()
     return user.id
 
+# @app.before_request
+# def csrf_protect():
+#     if request.method == "POST":
+#         token = login_session.pop('_csrf_token', None)
+#         print ("in csrf_protect: token {}".format(token))
+#         if not token or token != request.form.get('_csrf_token'):
+#             abort(403)
+
+# def generate_csrf_token():
+#   if '_csrf_token' not in login_session:
+#     login_session['_csrf_token'] = some_random_string()
+#   print ("in generate_csrf_token: token {}".format(login_session['_csrf_token']))
+#   return login_session['_csrf_token']
+
 if __name__ == '__main__':
   app.secret_key = 'super_secret_key'
+  WTF_CSRF_ENABLED = True
   app.debug = True
   CLIENT_ID = json.loads(
     open('client_secrets.json', 'r').read())['web']['client_id']
   APPLICATION_NAME = "Restaurant Menu Application"
   app.db_session = init('sqlite:///restaurantmenuwithusers.db').session
+  csrf.init_app(app)
+  # app.jinja_env.globals['csrf_token'] = generate_csrf_token    
+  # print("csrf_token: {}".format(csrf_token()))    
   app.run(host = '0.0.0.0', port = 5000)

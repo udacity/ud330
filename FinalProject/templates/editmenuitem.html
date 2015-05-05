@@ -1,6 +1,7 @@
 {% extends "main.html" %}
 {% block content %}
 {% include "header.html" %}
+<!-- http://stackoverflow.com/questions/5802580/html-input-type-file-get-the-image-before-submitting-the-form -->
 	<div class="row divider green">
 		<div class="col-md-12"></div>
 	</div>
@@ -11,13 +12,14 @@
 	</div>
 	<div class="row">
 		<div class="col-md-6 col-md-offset-1 padding-top">
-			<form action="#" method = "post">
+			<form action="#" method = "post" enctype="multipart/form-data">
+				<input name=_csrf_token type=hidden value="{{ csrf_token() }}">
 				<div class="form-group">
 					<label for="name">Name:</label>
 					<input type ="text" class="form-control" name="name" value="{{item.name }}">
 
 					<label for="description">Description:</label>
-					<textarea class="form-control" rows="3" name="description" value="{{item.description}}"></textarea>
+					<textarea class="form-control" rows="3" name="description" >{{item.description}}</textarea>
 
 					<label for="price">Price:</label>
 					<div class="input-group">
@@ -45,6 +47,10 @@
 					    <input type="radio" name="course" id="course4" value="Beverage" {%if item.course =='Beverage'%}checked{%endif%}>Beverage
 					  </label>
 					</div>
+				    <p>Select image to upload:</p>
+				    <input type="file" name="fileToUpload" id="fileToUpload" >
+					<img src="{{ item.imageURL() }}" width="150" height="200" >
+					<br>
 					<button type="submit" class="btn btn-default" id="submit" type="submit">
 					<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>Save</button>
 					<a href = '{{url_for('showRestaurants')}}'>

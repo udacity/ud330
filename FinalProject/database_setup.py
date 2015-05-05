@@ -137,10 +137,8 @@ class MenuItem(db.Model):
         return '<MenuItem %r>' % self.name
         
 
-db.create_all()
-db.session.commit()
-User1 = User(name="Tinny Tim", email="tinnyTim@udacity.com", picture='https://pbs.twimg.com/profile_images/2671170543/18debd694829ed78203a5a36dd364160_400x400.png')
-db.session.add(User1)
-db.session.commit()
-print("created tables")
+if __name__ == '__main__':
+  db.create_all()
+  db.session.commit()
+  print("created tables")
 
