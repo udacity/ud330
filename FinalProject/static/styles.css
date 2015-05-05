@@ -41,6 +41,10 @@ h3 {
  	color: #0093B9;
  	line-height: 17px;
  }
+
+.column {
+	float: left;
+}
 .padding-top {
 	padding-top: 30px;
 }

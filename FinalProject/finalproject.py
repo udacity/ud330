@@ -424,15 +424,19 @@ def newMenuItem(restaurant_id):
 #Edit a menu item
 @app.route('/restaurant/<int:restaurant_id>/menu/<int:menu_id>/edit', methods=['GET','POST'])
 def editMenuItem(restaurant_id, menu_id):
+    print("in editMenuItem")
     if 'user_id' not in login_session:
       return redirect('/login')
 
     editedItem = app.db_session.query(MenuItem).filter_by(id = menu_id).one()
     restaurant = app.db_session.query(Restaurant).filter_by(id = restaurant_id).one()
+    print("in editMenuItem: restaurant: {}".format(restaurant))
 
     if login_session['user_id'] != restaurant.user_id:
       return "<script>function myFunction() {alert('You are not authorized to edit menu items to this restaurant. Please create your own restaurant in order to edit items.');}</script><body onload='myFunction()''>"
+    print("request method: {}".format(request.method))
     if request.method == 'POST':
+      print("in editMenuItem: POST")
       request.get_data()
       files = request.files
       file = request.files['fileToUpload']
@@ -449,6 +453,7 @@ def editMenuItem(restaurant_id, menu_id):
           editedItem.price = request.form['price']
       if request.form['course']:
           editedItem.course = request.form['course']
+      print("in editMenuItem: about to add editedItem")
       app.db_session.add(editedItem)
       app.db_session.commit() 
       flash('Menu Item Successfully Edited')

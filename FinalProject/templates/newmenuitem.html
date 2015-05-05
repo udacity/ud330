@@ -1,6 +1,20 @@
 {% extends "main.html" %}
 {% block content %}
 {% include "header.html" %}
+<script>
+function readURL(input) {
+  if (input.files && input.files[0]) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      $('#card-image')
+        .attr('src', e.target.result)
+        .width(150)
+        .height(200);
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+</script>
 	<div class="row divider green">
 		<div class="col-md-12"></div>
 	</div>
@@ -47,9 +61,15 @@
 					  </label>
 					</div>
 				    Select image to upload:
-				    <input type="file" name="fileToUpload" id="fileToUpload">
-					<button type="submit" class="btn btn-default" id="submit" type="submit">
+				    <input type="file" name="fileToUpload" id="fileToUpload" onchange="readURL(this);">
+					<img id="card-image" src="#" width="150" height="200" alt="Image Not Found">
+					<br>
+					<button type="submit" class="btn btn-default" id="submit" >
 					<span class="glyphicon glyphicon-glass" aria-hidden="true"></span>Create</button>
+					<a href = '{{url_for('showRestaurants')}}'>
+						<button  type="button" class="btn btn-default delete">
+						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Cancel</button>
+					</a>
 				</div>
 			</form>
 		</div>
