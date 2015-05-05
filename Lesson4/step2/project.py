@@ -60,6 +60,7 @@ def fbconnect():
     # strip expire tag from access token
     token = result.split("&")[0]
 
+
     url = 'https://graph.facebook.com/v2.2/me?%s' % token
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
@@ -70,6 +71,10 @@ def fbconnect():
     login_session['username'] = data["name"]
     login_session['email'] = data["email"]
     login_session['facebook_id'] = data["id"]
+
+    # The token must be stored in the login_session in order to properly logout, let's strip out the information before the equals sign in our token
+    stored_token = token.split("=")[1]
+    login_session['access_token'] = stored_token
 
     # Get user picture
     url = 'https://graph.facebook.com/v2.2/me/picture?%s&redirect=0&height=200&width=200' % token
@@ -101,7 +106,9 @@ def fbconnect():
 @app.route('/fbdisconnect')
 def fbdisconnect():
     facebook_id = login_session['facebook_id']
-    url = 'https://graph.facebook.com/%s/permissions' % facebook_id
+    # The access token must me included to successfully logout
+    access_token = login_session['access_token']
+    url = 'https://graph.facebook.com/%s/permissions' % (facebook_id,access_token)
     h = httplib2.Http()
     result = h.request(url, 'DELETE')[1]
     return "you have been logged out"
