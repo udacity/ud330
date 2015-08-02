@@ -59,7 +59,7 @@ def fbconnect():
     token = result.split("&")[0]
 
 
-    url = 'https://graph.facebook.com/v2.2/me?%s' % token
+    url = 'https://graph.facebook.com/v2.2/me?%s&fields=email,name' % token
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
     # print "url sent for API access:%s"% url
