@@ -60,7 +60,6 @@ def fbconnect():
 
 
     url = 'https://graph.facebook.com/v2.2/me?%s&fields=email,name' % token
-    h = httplib2.Http()
     result = h.request(url, 'GET')[1]
     # print "url sent for API access:%s"% url
     # print "API JSON result: %s" % result
@@ -76,7 +75,6 @@ def fbconnect():
 
     # Get user picture
     url = 'https://graph.facebook.com/v2.2/me/picture?%s&redirect=0&height=200&width=200' % token
-    h = httplib2.Http()
     result = h.request(url, 'GET')[1]
     data = json.loads(result)
 
