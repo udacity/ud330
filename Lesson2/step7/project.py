@@ -35,7 +35,6 @@ def showLogin():
     # return "The current session state is %s" % login_session['state']
     return render_template('login.html', STATE=state)
 
-
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
     # Validate state token
@@ -93,7 +92,7 @@ def gconnect():
         return response
 
     # Store the access token in the session for later use.
-    login_session['credentials'] = credentials
+    login_session['access_token'] = credentials.access_token
     login_session['gplus_id'] = gplus_id
 
     # Get user info
@@ -123,35 +122,43 @@ def gconnect():
 
 @app.route('/gdisconnect')
 def gdisconnect():
-        # Only disconnect a connected user.
-    credentials = login_session.get('credentials')
+    credentials = login_session['access_token']
+    print 'In gdisconnect access token is %s', c
+    print 'user name is' 
+    print login_session['username']
+    #credentials = login_session.get('credentials') 
+    #if credentials is None:
     if credentials is None:
-        response = make_response(
-            json.dumps('Current user not connected.'), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    access_token = credentials.access_token
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
-    h = httplib2.Http()
-    result = h.request(url, 'GET')[0]
+ 	        print 'Credentials is None'
+    	response = make_response(
+    	json.dumps('Current user not connected.'), 401)
+    	response.headers['Content-Type'] = 'application/json'
+    	return response
+	#access_token = credentials.access_token
+	#url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
+	url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
+	h = httplib2.Http()
+	result = h.request(url, 'GET')[0]
+	print 'result is '
+	print result
+	if result['status'] == '200':
+    	# Reset the user's sesson.
+    	#del login_session['credentials'] 
+        del login_session['access_token'] 
+    	del login_session['gplus_id']
+    	del login_session['username']
+    	del login_session['email']
+    	del login_session['picture']
 
-    if result['status'] == '200':
-        # Reset the user's sesson.
-        del login_session['credentials']
-        del login_session['gplus_id']
-        del login_session['username']
-        del login_session['email']
-        del login_session['picture']
-
-        response = make_response(json.dumps('Successfully disconnected.'), 200)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    else:
-        # For whatever reason, the given token was invalid.
-        response = make_response(
-            json.dumps('Failed to revoke token for given user.', 400))
-        response.headers['Content-Type'] = 'application/json'
-        return response
+    	response = make_response(json.dumps('Successfully disconnected.'), 200)
+    	response.headers['Content-Type'] = 'application/json'
+    	return response
+	else:
+    	# For whatever reason, the given token was invalid.
+    	response = make_response(
+    	    json.dumps('Failed to revoke token for given user.', 400))
+    	response.headers['Content-Type'] = 'application/json'
+    	return response
 
 
 # JSON APIs to view Restaurant Information
