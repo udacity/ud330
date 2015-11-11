@@ -125,8 +125,8 @@ def gconnect():
 @app.route('/gdisconnect')
 def gdisconnect():
     credentials = login_session['access_token']
-    print 'In gdisconnect access token is %s', c
-    print 'user name is' 
+    print 'In gdisconnect access token is %s', credentials
+    print 'User name is: ' 
     print login_session['username']
     if credentials is None:
  	print 'Credentials is None'
