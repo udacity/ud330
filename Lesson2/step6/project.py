@@ -68,6 +68,7 @@ def gconnect():
     if result.get('error') is not None:
         response = make_response(json.dumps(result.get('error')), 500)
         response.headers['Content-Type'] = 'application/json'
+        return response
 
     # Verify that the access token is used for the intended user.
     gplus_id = credentials.id_token['sub']
