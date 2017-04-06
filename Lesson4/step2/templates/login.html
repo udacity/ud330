@@ -12,12 +12,12 @@
 </head>
 
 
-<body>  
+<body>
 
 
 <!-- GOOGLE PLUS SIGN IN-->
 
-          
+
           <div id="signInButton">
           <span class="g-signin"
             data-scope="openid email"
@@ -53,7 +53,7 @@ function signInCallback(authResult) {
          setTimeout(function() {
           window.location.href = "/restaurant";
          }, 4000);
-          
+
 
       } else if (authResult['error']) {
 
@@ -63,7 +63,7 @@ function signInCallback(authResult) {
          }
 
       }
-      
+
   }); } }
 </script>
 
@@ -76,10 +76,10 @@ function signInCallback(authResult) {
   window.fbAsyncInit = function() {
   FB.init({
     appId      : '846524132078825',
-    cookie     : true,  // enable cookies to allow the server to access 
+    cookie     : true,  // enable cookies to allow the server to access
                         // the session
     xfbml      : true,  // parse social plugins on this page
-    version    : 'v2.2' // use version 2.2
+    version    : 'v2.4' // use version 2.4
   });
 
   };
@@ -114,14 +114,14 @@ function signInCallback(authResult) {
          setTimeout(function() {
           window.location.href = "/restaurant";
          }, 4000);
-          
+
 
       } else {
         $('#result').html('Failed to make a server-side call. Check your configuration and console.');
          }
 
       }
-      
+
   });
 
 
@@ -131,7 +131,7 @@ function signInCallback(authResult) {
 
 
 <button>
-         
+
 
           <fb:login-button scope="public_profile,email" onlogin="sendTokenToServer();">
 <a href='javascript:sendTokenToServer()'>Login with Facebook</a>
