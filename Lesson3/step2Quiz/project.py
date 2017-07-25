@@ -99,7 +99,7 @@ def gconnect():
         return response
 
     # Store the access token in the session for later use.
-    login_session['credentials'] = credentials
+    login_session['credentials'] = credentials.access_token  # We need to update all the code
     login_session['gplus_id'] = gplus_id
 
     # Get user info
