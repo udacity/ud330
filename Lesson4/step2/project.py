@@ -311,10 +311,10 @@ def new_restaurant():
 
 @app.route('/restaurant/<int:restaurant_id>/edit/', methods=['GET', 'POST'])
 def edit_restaurant(restaurant_id):
-    edited_restaurant = session.query(
-        Restaurant).filter_by(id=restaurant_id).one()
     if 'username' not in login_session:
         return redirect('/login')
+    edited_restaurant = session.query(
+        Restaurant).filter_by(id=restaurant_id).one()
     if edited_restaurant.user_id != login_session['user_id']:
         return "<script>function myFunction() {" \
                "alert('You are not authorized to edit this restaurant. " \
