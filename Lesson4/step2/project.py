@@ -341,6 +341,9 @@ def delete_restaurant(restaurant_id):
                "Please create your own restaurant in order to delete.');}</script><body onload='myFunction()''>"
     if request.method == 'POST':
         session.delete(restaurant_to_delete)
+        menu_items_to_delete = session.query(MenuItem).filter_by(restaurant_id=restaurant_id).all()
+        for del_menu in menu_items_to_delete:
+            session.delete(del_menu)
         flash('%s Successfully Deleted' % restaurant_to_delete.name)
         session.commit()
         return redirect(url_for('show_restaurants', restaurant_id=restaurant_id))
