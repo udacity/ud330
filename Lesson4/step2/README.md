@@ -28,3 +28,12 @@ Or
 ```shell
 python project.py
 ```
+
+All dependencies are kept in the .env file.  To create the .env file, run
+
+```shell
+cp .env.example .env
+```
+
+Then fill in the environment values with their required settings.  
+

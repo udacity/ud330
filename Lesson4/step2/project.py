@@ -309,14 +309,19 @@ def remove_session():
 def restaurant_menu_json(restaurant_id):
     items = session.query(MenuItem).filter_by(
         restaurant_id=restaurant_id).all()
+    if not items:
+        return jsonify("No such restaurant exists")
     return jsonify(MenuItems=[i.serialize for i in items])
 
 
 @app.route('/restaurant/<int:restaurant_id>/menu/<int:menu_id>/JSON')
 def menu_item_json(restaurant_id, menu_id):
-    menu_item = session.query(MenuItem).filter_by(
-        id=menu_id, restaurant_id=restaurant_id
-    ).one()
+    try:
+        menu_item = session.query(MenuItem).filter_by(
+            id=menu_id, restaurant_id=restaurant_id
+        ).one()
+    except:
+        return jsonify("No such menu exists")
     return jsonify(Menu_Item=menu_item.serialize)
 
 
@@ -366,8 +371,13 @@ def new_restaurant():
 @app.route('/restaurant/<int:restaurant_id>/edit/', methods=['GET', 'POST'])
 @login_required
 def edit_restaurant(restaurant_id):
-    edited_restaurant = session.query(
-        Restaurant).filter_by(id=restaurant_id).one()
+    try:
+        edited_restaurant = session.query(
+            Restaurant).filter_by(
+            id=restaurant_id
+        ).one()
+    except:
+        return "No such restaurant exists."
     if edited_restaurant.user_id != login_session['user_id']:
         return "<script>function myFunction() {" \
                "alert('You are not authorized to edit this restaurant. " \
@@ -389,8 +399,11 @@ def edit_restaurant(restaurant_id):
 @app.route('/restaurant/<int:restaurant_id>/delete/', methods=['GET', 'POST'])
 @login_required
 def delete_restaurant(restaurant_id):
-    restaurant_to_delete = session.query(
-        Restaurant).filter_by(id=restaurant_id).one()
+    try:
+        restaurant_to_delete = session.query(
+            Restaurant).filter_by(id=restaurant_id).one()
+    except:
+        return "No such restaurant to delete"
     if restaurant_to_delete.user_id != login_session['user_id']:
         return "<script>function myFunction() {" \
                "alert('You are not authorized to delete this restaurant. " \
@@ -424,8 +437,15 @@ def delete_restaurant(restaurant_id):
 @app.route('/restaurant/<int:restaurant_id>/')
 @app.route('/restaurant/<int:restaurant_id>/menu/')
 def show_menu(restaurant_id):
-    restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
+    try:
+        restaurant = session.query(Restaurant).filter_by(
+            id=restaurant_id
+        ).one()
+    except:
+        return "No such restaurant"
     creator = get_user_info(restaurant.user_id)
+    if creator is None:
+        return "The owner has shut down the restaurant"
     items = session.query(MenuItem).filter_by(
         restaurant_id=restaurant_id).all()
     return render_template(
@@ -444,7 +464,12 @@ def show_menu(restaurant_id):
 )
 @login_required
 def new_menu_item(restaurant_id):
-    restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
+    try:
+        restaurant = session.query(Restaurant).filter_by(
+            id=restaurant_id
+        ).one()
+    except:
+        return "No such restaurant"
     if login_session['user_id'] != restaurant.user_id:
         return "<script>function myFunction() {" \
                "alert(" \
@@ -478,8 +503,18 @@ def new_menu_item(restaurant_id):
 )
 @login_required
 def edit_menu_item(restaurant_id, menu_id):
-    edited_item = session.query(MenuItem).filter_by(id=menu_id).one()
-    restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
+    try:
+        edited_item = session.query(MenuItem).filter_by(
+            id=menu_id
+        ).one()
+    except:
+        return "No such item"
+    try:
+        restaurant = session.query(Restaurant).filter_by(
+            id=restaurant_id
+        ).one()
+    except:
+        return "No such restaurant"
     if login_session['user_id'] != restaurant.user_id:
         return "<script>function myFunction() {" \
                "alert('You are not authorized to edit menu items" \
@@ -510,8 +545,18 @@ def edit_menu_item(restaurant_id, menu_id):
 )
 @login_required
 def delete_menu_item(restaurant_id, menu_id):
-    restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
-    item_to_delete = session.query(MenuItem).filter_by(id=menu_id).one()
+    try:
+        restaurant = session.query(Restaurant).filter_by(
+            id=restaurant_id
+        ).one()
+    except:
+        return "No such restaurant"
+    try:
+        item_to_delete = session.query(MenuItem).filter_by(
+            id=menu_id
+        ).one()
+    except:
+        return "No such item"
     if login_session['user_id'] != restaurant.user_id:
         return "<script>function myFunction() {" \
                "alert('You are not authorized to delete menu items " \

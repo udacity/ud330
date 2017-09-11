@@ -126,7 +126,6 @@ a {
 }
 
 .banner.menu {
-    height: 150px;
     background-color: #E1E17F;
 }
 
@@ -137,6 +136,7 @@ a {
 
 .banner h1 {
     margin: 45px 0;
+    font-size: 14px;
 }
 
 .restaurant-list {
