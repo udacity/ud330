@@ -237,32 +237,18 @@ def getUserID(email):
 
 # DISCONNECT - Revoke a current user's token and reset their login_session
 
-
 @app.route('/gdisconnect')
 def gdisconnect():
-    # Only disconnect a connected user.
-    access_token = login_session.get('access_token')
-    if access_token is None:
-        response = make_response(
-            json.dumps('Current user not connected.'), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
-    h = httplib2.Http()
-    result = h.request(url, 'GET')[0]
-    if result['status'] == '200':
-        del login_session['access_token']
-        del login_session['gplus_id']
-        del login_session['username']
-        del login_session['email']
-        del login_session['picture']
-        response = make_response(json.dumps('Successfully disconnected.'), 200)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    else:
-        response = make_response(json.dumps('Failed to revoke token for given user.', 400))
-        response.headers['Content-Type'] = 'application/json'
-        return response
+  access_token = login_session.get('access_token')
+  url = 'https://accounts.google.com/o/oauth2/revoke?token={}'.format(access_token)
+  h = httplib2.Http()
+  result = h.request(url, 'GET')[0]
+  if result['status'] == '200':
+    return "You have been logged out."
+  else:
+    response = make_response(json.dumps('Failed to revoke token for given user.'), 400)
+    response.headers['Content-Type'] = 'application/json'
+    return response
 
 
 # JSON APIs to view Restaurant Information
