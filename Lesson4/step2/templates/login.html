@@ -12,16 +12,16 @@
 </head>
 
 
-<body>  
+<body>
 
 
 <!-- GOOGLE PLUS SIGN IN-->
 
-          
+
           <div id="signinButton">
           <span class="g-signin"
             data-scope="openid email"
-            data-clientid="13140951618-15nik769cellkubaqnjk5facdib2dh4d.apps.googleusercontent.com"
+            data-clientid="YOUR_CLIENT_ID_GOES_HERE.apps.googleusercontent.com"
             data-redirecturi="postmessage"
             data-accesstype="offline"
             data-cookiepolicy="single_host_origin"
@@ -53,7 +53,7 @@ function signInCallback(authResult) {
          setTimeout(function() {
           window.location.href = "/restaurant";
          }, 4000);
-          
+
 
       } else if (authResult['error']) {
 
@@ -63,7 +63,7 @@ function signInCallback(authResult) {
          }
 
       }
-      
+
   }); } }
 </script>
 
@@ -75,8 +75,8 @@ function signInCallback(authResult) {
 <script>
   window.fbAsyncInit = function() {
   FB.init({
-    appId      : '846524132078825',
-    cookie     : true,  // enable cookies to allow the server to access 
+    appId      : 'PASTE_YOUR_APP_ID_HERE',
+    cookie     : true,  // enable cookies to allow the server to access
                         // the session
     xfbml      : true,  // parse social plugins on this page
     version    : 'v2.8' // use version 2.8
@@ -114,14 +114,14 @@ function signInCallback(authResult) {
          setTimeout(function() {
           window.location.href = "/restaurant";
          }, 4000);
-          
+
 
       } else {
         $('#result').html('Failed to make a server-side call. Check your configuration and console.');
          }
 
       }
-      
+
   });
 
 
@@ -131,7 +131,7 @@ function signInCallback(authResult) {
 
 
 <button>
-         
+
 
           <fb:login-button scope="public_profile,email" onlogin="sendTokenToServer();">
 <a href='javascript:sendTokenToServer()'>Login with Facebook</a>
