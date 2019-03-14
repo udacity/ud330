@@ -5,8 +5,8 @@
   </script>
   <script src="https://apis.google.com/js/client:platform.js?onload=start" async defer>
   </script>
-  <!-- END Pre-requisites -->
-<script>
+
+ <script>
     function start() {
       gapi.load('auth2', function() {
         auth2 = gapi.auth2.init({
@@ -18,6 +18,7 @@
     }
   </script>
 
+ <!-- END Pre-requisites -->
 
 </head>
 
@@ -27,7 +28,6 @@
 <button id="signinButton">Sign in with Google</button>
 <script>
   $('#signinButton').click(function() {
-    // signInCallback defined in step 6.
     auth2.grantOfflineAccess().then(signInCallback);
   });
 </script>
